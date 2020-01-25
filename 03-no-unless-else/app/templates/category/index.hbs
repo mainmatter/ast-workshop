@@ -1,0 +1,91 @@
+{{ title this.category.category ' - Categories' }}
+
+<div id='crates-heading'>
+  <LinkTo @route="categories" aria-label="Categories">{{svg-jar "crate"}}</LinkTo>
+  <h1>
+    {{#each this.category.parent_categories as |parent|}}<LinkTo @route="category" @model={{parent.slug}}>{{parent.category}}</LinkTo>::{{/each}}
+    {{~ this.category.category }}
+  </h1>
+</div>
+
+<div>
+  <p>{{ this.category.description }}</p>
+</div>
+
+{{#if this.category.subcategories }}
+  <div id='subcategories'>
+    <h2>Subcategories</h2>
+    <div class='white-rows'>
+      {{#each this.category.subcategories as |subcategory| }}
+        <div class='row'>
+          <div class='desc'>
+            <div class='info'>
+              <LinkTo @route="category" @model={{subcategory.slug}}>{{subcategory.category}}</LinkTo>
+              <span class='small'>
+                {{ pluralize (format-num subcategory.crates_cnt) "crate" }}
+              </span>
+            </div>
+            <div class='summary'>
+              <span class='small'>
+                {{ subcategory.description }}
+              </span>
+            </div>
+          </div>
+        </div>
+      {{/each}}
+    </div>
+  </div>
+{{/if}}
+
+<h2>Crates</h2>
+<div id='results'>
+  <div class='nav' data-test-category-nav>
+    <span class='amt small'>
+      Displaying
+      <span class='cur'>{{ this.currentPageStart }}-{{ this.currentPageEnd }}</span>
+      of <span class='total'>{{ this.totalItems }}</span> total results
+    </span>
+  </div>
+
+  <div class='sort' data-test-category-sort>
+    <span class='small'>Sort by</span>
+    <RlDropdownContainer class="dropdown-container">
+      <RlDropdownToggle @tagName="a" class="dropdown" data-test-current-order>
+        {{svg-jar "sort"}}
+        {{ this.currentSortBy }}
+        <span class='arrow'></span>
+      </RlDropdownToggle>
+
+      <RlDropdown @tagName="ul" class="dropdown">
+        <li>
+          <LinkTo @query={{hash sort="alpha"}}>
+            Alphabetical
+          </LinkTo>
+        </li>
+        <li>
+          <LinkTo @query={{hash sort="downloads"}}>
+            All-Time Downloads
+          </LinkTo>
+        </li>
+        <li>
+          <LinkTo @query={{hash sort="recent-downloads"}}>
+            Recent Downloads
+          </LinkTo>
+        </li>
+        <li>
+          <LinkTo @query={{hash sort="recent-updates"}}>
+            Recent Updates
+          </LinkTo>
+        </li>
+      </RlDropdown>
+    </RlDropdownContainer>
+  </div>
+</div>
+
+<div id='crates' class='white-rows'>
+  {{#each this.model as |crate|}}
+    <CrateRow @crate={{crate}} />
+  {{/each}}
+</div>
+
+<Pagination @pages={{this.pages}} @prevPage={{this.prevPage}} @nextPage={{this.nextPage}} />

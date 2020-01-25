@@ -1,0 +1,15 @@
+<div class="crate-toml-copy" ...attributes>
+  <CopyButton @clipboardText={{this.copyText}} @success={{action "copySuccess"}} @error={{action "copyError"}} @title="Copy Cargo.toml snippet to clipboard">
+    {{svg-jar "copy" alt="Copy Cargo.toml snippet to clipboard"}}
+    <div class="copy-notification {{if this.showSuccess "copy-success" "copy-failure"}}">
+      {{#if this.showNotification}}
+        {{#unless this.showSuccess}}
+          An error occured. Please use CTRL+C.
+        {{else}}
+          Copied!
+        {{/unless}}
+      {{/if}}
+    </div>
+  </CopyButton>
+
+</div>

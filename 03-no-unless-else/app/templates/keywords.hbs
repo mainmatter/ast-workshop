@@ -1,0 +1,55 @@
+{{ title 'Keywords' }}
+
+<div id='crates-heading'>
+  {{svg-jar "crate"}}
+  <h1>All Keywords</h1>
+</div>
+
+<div id='results'>
+  <div class='nav' data-test-keywords-nav>
+    <span class='amt small'>
+      Displaying
+      <span class='cur'>{{ this.currentPageStart }}-{{ this.currentPageEnd }}</span>
+      of <span class='total'>{{ this.totalItems }}</span> total results
+    </span>
+  </div>
+
+  <div class='sort' data-test-keywords-sort>
+    <span class='small'>Sort by</span>
+    <RlDropdownContainer class="dropdown-container">
+      <RlDropdownToggle @tagName="a" class="dropdown" data-test-current-order>
+        {{svg-jar "sort"}}
+        {{ this.currentSortBy }}
+        <span class='arrow'></span>
+      </RlDropdownToggle>
+
+      <RlDropdown @tagName="ul" class="dropdown">
+        <li>
+          <LinkTo @query={{hash sort="alpha"}}>
+            Alphabetical
+          </LinkTo>
+        </li>
+        <li>
+          <LinkTo @query={{hash sort="crates"}}>
+            # Crates
+          </LinkTo>
+        </li>
+      </RlDropdown>
+    </RlDropdownContainer>
+  </div>
+</div>
+
+<div class='white-rows'>
+  {{#each this.model as |keyword|}}
+    <div class='row'>
+      <div class='info'>
+        <LinkTo @route="keyword" @model={{keyword}}>{{keyword.id}}</LinkTo>
+        <span class='vers small'>
+          {{ pluralize (format-num keyword.crates_cnt) "crate" }}
+        </span>
+      </div>
+    </div>
+  {{/each}}
+</div>
+
+<Pagination @pages={{this.pages}} @prevPage={{this.prevPage}} @nextPage={{this.nextPage}} />
