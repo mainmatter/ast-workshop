@@ -1,0 +1,10 @@
+{
+  "name": "ast-workshop",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "author": "Tobias Bieniek <tobias.bieniek@gmail.com>",
+  "workspaces": [
+    "*/"
+  ]
+}
