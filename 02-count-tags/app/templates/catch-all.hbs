@@ -1,0 +1,15 @@
+<FlashMessage @message="Oops, that route doesn't exist!" />
+
+<p local-class='p404'>
+  Perhaps a search of the site may help?
+
+  <Input
+    @type="text"
+    local-class="search-field"
+    class="search"
+    placeholder="Search"
+    @value={{this.search}}
+    @enter={{action "search"}}
+    required={{true}}
+  />
+</p>

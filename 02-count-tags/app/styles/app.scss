@@ -1,0 +1,180 @@
+@import "normalize";
+
+$html-bg: #3b6837;
+$main-color: #383838;
+$main-color-light: lighten($main-color, 30%);
+$main-bg: #f9f7ec;
+$main-bg-dark: #edebdd;
+$gray-border: #d5d3cb;
+$link-color: rgb(0, 172, 91);
+
+@import "buttons";
+
+@import "application";
+@import "home";
+@import "category-slugs";
+@import "crate";
+@import "crate/version";
+@import "components/crate-toml-copy";
+@import "dashboard";
+@import "me";
+
+@import "modules";
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+    background: url('/assets/noise.png');
+    background-color: $html-bg;
+}
+
+html, body { margin: 0; }
+
+body {
+  font-family: "Helvetica Neue","Helvetica",Helvetica,Arial,sans-serif;
+  font-size: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* .ember-application is added by Ember after initial rendering */
+.ember-application > div,
+body > div {
+    width: 960px;
+    @media only screen and (max-width: 960px) {
+        width: 100%;
+    }
+}
+
+#noscript {
+    color: white;
+    padding: 10px 0;
+}
+
+form.search label {
+    position: absolute;
+    left: -10000px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+input.search {
+    box-shadow: none;
+}
+
+span.small {
+    color: $main-color-light;
+    font-size: 80%;
+    .num {
+        font-weight: bold;
+        color: $main-color;
+    }
+}
+
+.optional {
+    font-size: 80%;
+}
+
+.yanked {
+    font-size: 80%;
+    color: rgb(166, 0, 0)
+}
+
+a {
+    color: $link-color;
+    text-decoration: none;
+    &:hover { color: darken($link-color, 10%); }
+}
+.small a {
+    color: $main-color-light;
+    text-decoration: underline;
+    font-weight: normal;
+    &:hover { color: darken($main-color-light, 10%); }
+}
+
+pre {
+    background: $main-color;
+    color: white;
+    padding: 20px;
+    font-family: Consolas, Monaco, 'Andale Mono', monospace;
+}
+
+button.dropdown, a.dropdown {
+    color: inherit;
+    cursor: pointer;
+    .arrow { font-size: 50%; display: inline-block; vertical-align: middle; }
+    .arrow::after { content: "▼"; }
+    &.active .arrow::after { content: "▲"; }
+}
+
+ul.dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    text-align: left;
+    padding: 0;
+    background: white;
+    border: 1px solid $gray-border;
+    list-style: none;
+    z-index: 10;
+    overflow: hidden;
+    border-radius: 5px;
+
+    li a {
+        font-size: 90%;
+        width: 100%;
+        display: inline-block;
+        padding: 8px 10px;
+        text-decoration: none;
+        color: $main-color !important;
+
+        &:hover {
+            background: lighten($main-color, 15%);
+            color: white !important;
+        }
+    }
+    li.last { border-top: 1px solid $gray-border; }
+    &.open {
+        display: block;
+        visibility: visible;
+        opacity: 1;
+    }
+}
+.dropdown-container {
+    display: inline-block;
+    position: relative;
+}
+
+.hidden { display: none; }
+
+@media only screen and (max-width: 400px) {
+    h1 { font-size: 1.5em; }
+}
+
+h1 {
+  span.subtitle {
+    display: block;
+    font-size: x-small;
+  }
+}
+
+.arrow-in-list svg {
+    background: #fff;
+}
+
+a.arrow svg {
+    background: #EEECDD;
+}
+
+abbr[title] {
+    text-decoration: none;
+    border-bottom: 1px dotted;
+}

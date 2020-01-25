@@ -1,0 +1,30 @@
+<div class='all-versions-back'>
+  <LinkTo @route="crate" @model={{this.crate.id}}>&#11013; Back to {{ this.crate.name }}</LinkTo>
+</div>
+
+<div id='results'>
+  <div class='nav'>
+    <span class='amt'>
+      Displaying
+      <span class='cur'>{{ this.currentPageStart }}-{{ this.currentPageEnd }}</span>
+      of <span class='total'>{{ this.totalItems }}</span> reverse dependencies
+      of <span class='num'>{{ this.crate.name }}</span>
+    </span>
+  </div>
+</div>
+
+<div class='white-rows'>
+  {{#each this.model as |dependency|}}
+    <div class='crate row'>
+      <div>
+        <LinkTo @route="crate" @model={{dependency.version.crateName}}>{{dependency.version.crateName}}</LinkTo> requires {{dependency.req}}
+      </div>
+      <div class='stats downloads'>
+        {{svg-jar "download-clear-back"}}
+        <span class='num rev-dep-downloads'>{{ format-num dependency.downloads }}</span>
+      </div>
+    </div>
+  {{/each}}
+</div>
+
+<Pagination @pages={{this.pages}} @prevPage={{this.prevPage}} @nextPage={{this.nextPage}} />

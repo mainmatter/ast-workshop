@@ -1,0 +1,60 @@
+{{ title 'My Crates' }}
+
+<div id='crates-heading'>
+  {{svg-jar "crate"}}
+  <h1>My Crates</h1>
+</div>
+
+{{! TODO: reduce duplication with templates/crates.hbs }}
+
+<div id='results'>
+  <div class='nav'>
+    <span class='amt small'>
+      Displaying
+      <span class='cur'>{{ this.currentPageStart }}-{{ this.currentPageEnd }}</span>
+      of <span class='total'>{{ this.totalItems }}</span> total results
+    </span>
+  </div>
+
+  <div class='sort'>
+    <span class='small'>Sort by</span>
+    <RlDropdownContainer class="dropdown-container">
+      <RlDropdownToggle @tagName="a" class="dropdown">
+        {{svg-jar "sort"}}
+        {{ this.currentSortBy }}
+        <span class='arrow'></span>
+      </RlDropdownToggle>
+
+      <RlDropdown @tagName="ul" class="dropdown">
+        <li>
+          <LinkTo @query={{hash sort="alpha"}}>
+            Alphabetical
+          </LinkTo>
+        </li>
+        <li>
+          <LinkTo @query={{hash sort="downloads"}}>
+            All-Time Downloads
+          </LinkTo>
+        </li>
+        <li>
+          <LinkTo @query={{hash sort="recent-downloads"}}>
+            Recent Downloads
+          </LinkTo>
+        </li>
+        <li>
+          <LinkTo @query={{hash sort="recent-updates"}}>
+            Recent Updates
+          </LinkTo>
+        </li>
+      </RlDropdown>
+    </RlDropdownContainer>
+  </div>
+</div>
+
+<div id='crates' class='white-rows'>
+  {{#each this.model as |crate|}}
+    <CrateRow @crate={{crate}} />
+  {{/each}}
+</div>
+
+<Pagination @pages={{this.pages}} @prevPage={{this.prevPage}} @nextPage={{this.nextPage}} />
