@@ -1,0 +1,169 @@
+daemon off;
+#Heroku dynos have at least 4 cores.
+worker_processes <%= ENV['NGINX_WORKERS'] || 4 %>;
+
+events {
+	use epoll;
+	accept_mutex on;
+	worker_connections 1024;
+}
+
+http {
+	set_real_ip_from 10.0.0.0/8;
+	set_real_ip_from 127.0.0.0/24;
+	real_ip_header X-Forwarded-For;
+	real_ip_recursive on;
+
+	# CloudFront IP addresses from http://d7uri8nf7uskq.cloudfront.net/tools/list-cloudfront-ips
+	# Last updated: 2019-11-18
+	set_real_ip_from 144.220.0.0/16;
+	set_real_ip_from 52.124.128.0/17;
+	set_real_ip_from 54.230.0.0/16;
+	set_real_ip_from 54.239.128.0/18;
+	set_real_ip_from 52.82.128.0/19;
+	set_real_ip_from 99.84.0.0/16;
+	set_real_ip_from 204.246.172.0/24;
+	set_real_ip_from 205.251.192.0/19;
+	set_real_ip_from 54.239.192.0/19;
+	set_real_ip_from 70.132.0.0/18;
+	set_real_ip_from 13.32.0.0/15;
+	set_real_ip_from 13.224.0.0/14;
+	set_real_ip_from 13.35.0.0/16;
+	set_real_ip_from 204.246.164.0/22;
+	set_real_ip_from 204.246.168.0/22;
+	set_real_ip_from 71.152.0.0/17;
+	set_real_ip_from 216.137.32.0/19;
+	set_real_ip_from 205.251.249.0/24;
+	set_real_ip_from 99.86.0.0/16;
+	set_real_ip_from 52.46.0.0/18;
+	set_real_ip_from 52.84.0.0/15;
+	set_real_ip_from 204.246.173.0/24;
+	set_real_ip_from 130.176.0.0/16;
+	set_real_ip_from 64.252.64.0/18;
+	set_real_ip_from 204.246.174.0/23;
+	set_real_ip_from 64.252.128.0/18;
+	set_real_ip_from 205.251.254.0/24;
+	set_real_ip_from 143.204.0.0/16;
+	set_real_ip_from 205.251.252.0/23;
+	set_real_ip_from 204.246.176.0/20;
+	set_real_ip_from 13.249.0.0/16;
+	set_real_ip_from 54.240.128.0/18;
+	set_real_ip_from 205.251.250.0/23;
+	set_real_ip_from 52.222.128.0/17;
+	set_real_ip_from 54.182.0.0/16;
+	set_real_ip_from 54.192.0.0/16;
+	set_real_ip_from 13.124.199.0/24;
+	set_real_ip_from 34.226.14.0/24;
+	set_real_ip_from 52.15.127.128/26;
+	set_real_ip_from 35.158.136.0/24;
+	set_real_ip_from 52.57.254.0/24;
+	set_real_ip_from 18.216.170.128/25;
+	set_real_ip_from 13.52.204.0/23;
+	set_real_ip_from 13.54.63.128/26;
+	set_real_ip_from 13.59.250.0/26;
+	set_real_ip_from 13.210.67.128/26;
+	set_real_ip_from 35.167.191.128/26;
+	set_real_ip_from 52.47.139.0/24;
+	set_real_ip_from 52.199.127.192/26;
+	set_real_ip_from 52.212.248.0/26;
+	set_real_ip_from 52.66.194.128/26;
+	set_real_ip_from 13.113.203.0/24;
+	set_real_ip_from 99.79.168.0/23;
+	set_real_ip_from 34.195.252.0/24;
+	set_real_ip_from 35.162.63.192/26;
+	set_real_ip_from 34.223.12.224/27;
+	set_real_ip_from 52.56.127.0/25;
+	set_real_ip_from 34.223.80.192/26;
+	set_real_ip_from 13.228.69.0/24;
+	set_real_ip_from 34.216.51.0/25;
+	set_real_ip_from 3.231.2.0/25;
+	set_real_ip_from 54.233.255.128/26;
+	set_real_ip_from 18.200.212.0/23;
+	set_real_ip_from 52.52.191.128/26;
+	set_real_ip_from 52.78.247.128/26;
+	set_real_ip_from 52.220.191.0/26;
+	set_real_ip_from 34.232.163.208/29;
+
+	gzip on;
+	gzip_comp_level 2;
+	gzip_proxied any;
+	gzip_min_length 512;
+	gzip_types text/plain text/css application/json application/javascript application/x-javascript text/javascript text/xml application/xml application/rss+xml application/atom+xml application/rdf+xml image/svg+xml;
+
+	server_tokens off;
+
+	log_format l2met 'measure#nginx.service=$request_time request_id=$http_x_request_id';
+	access_log logs/nginx/access.log l2met;
+	error_log logs/nginx/error.log;
+
+	include mime.types;
+	default_type application/octet-stream;
+	sendfile on;
+
+	client_body_timeout 30;
+	client_max_body_size 50m;
+
+	limit_req_zone $remote_addr zone=publish:10m rate=1r/m;
+
+	upstream app_server {
+		server localhost:8888 fail_timeout=0;
+	}
+
+	server {
+		listen <%= ENV["PORT"] %>;
+		server_name _;
+		keepalive_timeout 5;
+
+		location ~ ^/assets/ {
+			add_header X-Content-Type-Options nosniff;
+			add_header Cache-Control public;
+			root dist;
+			expires max;
+		}
+
+		add_header Strict-Transport-Security "max-age=31536000" always;
+		add_header Vary 'Accept, Accept-Encoding, Cookie';
+		proxy_set_header Host $http_host;
+		proxy_set_header X-Real-Ip $remote_addr;
+		proxy_redirect off;
+		if ($http_x_forwarded_proto != 'https') {
+			rewrite ^ https://$host$request_uri? permanent;
+		}
+
+		<% if ENV['USE_FASTBOOT'] == "staging-experimental" %>
+			# Experimentally send all non-backend requests to FastBoot
+
+			location /api/ {
+				proxy_pass http://app_server;
+			}
+
+			# FastBoot
+			location / {
+				proxy_pass http://localhost:9000;
+			}
+		<% elsif ENV['USE_FASTBOOT'] && !ENV['USE_FASTBOOT'].empty? %>
+			# Fastboot is enabled only for allowed paths
+
+			location = /policies {
+				proxy_pass http://localhost:9000;
+			}
+
+			location / {
+				proxy_pass http://app_server;
+			}
+		<% else %>
+			# FastBoot is disabled, backend sends the static Ember index HTML for non-backend paths
+
+			location / {
+				proxy_pass http://app_server;
+			}
+		<% end %>
+
+		location ~ ^/api/v./crates/new$ {
+			proxy_pass http://app_server;
+
+			limit_req zone=publish burst=30 nodelay;
+			limit_req_status 429;
+		}
+	}
+}
