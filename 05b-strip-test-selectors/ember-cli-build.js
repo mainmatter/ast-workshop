@@ -42,5 +42,23 @@ module.exports = function(defaults) {
     },
   });
 
+  class StripTestSelectorsTransform {
+    transform(ast) {
+      this.syntax.traverse(ast, {
+        ElementNode(node) {
+          node.attributes = node.attributes
+            .filter(it => !it.name.startsWith('data-test-'));
+        }
+      });
+
+      return ast;
+    }
+  }
+
+  app.registry.add('htmlbars-ast-plugin', {
+    name: 'strip-test-selectors',
+    plugin: StripTestSelectorsTransform,
+  });
+
   return app.toTree();
 };
