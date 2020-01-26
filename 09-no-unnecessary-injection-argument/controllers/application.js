@@ -6,7 +6,7 @@ import { on } from '@ember/object/evented';
 
 export default Controller.extend(EKMixin, {
   flashMessages: service(),
-  search: service(),
+  search: service('search'),
   searchQuery: oneWay('search.q'),
   session: service(),
 

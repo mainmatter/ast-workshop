@@ -11,7 +11,7 @@ const NUM_VERSIONS = 5;
 const PromiseArray = ArrayProxy.extend(PromiseProxyMixin);
 
 export default Controller.extend({
-  session: service(),
+  session: service('session'),
 
   isDownloading: false,
 
