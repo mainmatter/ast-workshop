@@ -21,6 +21,8 @@ module.exports = function(defaults) {
   ];
 
   let app = new EmberApp(defaults, {
+    name: 'cargo',
+
     babel6: {
       plugins: ['transform-object-rest-spread'],
     },
