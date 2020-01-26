@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "lint:js": "eslint ."
+    "lint:js": "eslint . --rulesdir lib/eslint-rules"
   },
   "devDependencies": {
     "eslint": "^6.8.0"

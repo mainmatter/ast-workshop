@@ -5,6 +5,6 @@ module.exports = {
     sourceType: 'module',
   },
   rules: {
-    'no-console': 'error',
+    'custom-no-console-log': 'error',
   },
 };
