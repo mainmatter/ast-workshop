@@ -173,7 +173,6 @@ export default Controller.extend({
     },
   },
 
-  // eslint-disable-next-line ember/no-observers
   report: observer('crate.readme', function() {
     if (typeof document === 'undefined') {
       return;

@@ -4,7 +4,6 @@ import { inject as service } from '@ember/service';
 import ajax from 'ember-fetch/ajax';
 
 export default Controller.extend({
-  // eslint-disable-next-line ember/avoid-leaking-state-in-ember-objects
   tokenSort: ['created_at:desc'],
 
   sortedTokens: sort('model.api_tokens', 'tokenSort'),
