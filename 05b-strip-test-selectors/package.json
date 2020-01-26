@@ -1,5 +1,5 @@
 {
-  "name": "04-strip-whitespace",
+  "name": "05b-strip-test-selectors",
   "version": "0.0.0",
   "private": true,
   "homepage": "https://github.com/rust-lang/crates.io#readme",
