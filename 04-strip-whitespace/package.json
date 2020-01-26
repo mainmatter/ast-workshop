@@ -98,5 +98,8 @@
     "sass": "^1.24.4",
     "semver": "^7.1.1",
     "timekeeper": "^2.2.0"
+  },
+  "workspaces": {
+    "nohoist": ["normalize.css"]
   }
 }
