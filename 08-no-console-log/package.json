@@ -1,0 +1,11 @@
+{
+  "name": "08-no-console-log",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "lint:js": "eslint ."
+  },
+  "devDependencies": {
+    "eslint": "^6.8.0"
+  }
+}
