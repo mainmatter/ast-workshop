@@ -1,0 +1,8 @@
+{
+  "name": "06-component-migration",
+  "version": "0.0.0",
+  "private": true,
+  "devDependencies": {
+    "ember-template-recast": "^4.0.0"
+  }
+}
