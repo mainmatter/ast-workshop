@@ -81,6 +81,7 @@
     "ember-source": "~3.15.0",
     "ember-svg-jar": "^2.2.3",
     "ember-template-lint": "^1.13.0",
+    "ember-template-recast": "^4.0.0",
     "ember-test-selectors": "^3.0.0",
     "ember-web-app": "^3.0.1",
     "ember-window-mock": "^0.5.4",
