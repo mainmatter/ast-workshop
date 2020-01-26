@@ -5,5 +5,6 @@ module.exports = {
     sourceType: 'module',
   },
   rules: {
+    'no-unnecessary-injection-argument': 'error'
   },
 };
