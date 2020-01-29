@@ -5,7 +5,7 @@ module.exports = function() {
 
     visitor: {
       TextNode(node) {
-        node.chars = node.chars.replace(/[ \r\n]+/, ' ');
+        node.chars = node.chars.replace(/[ \r\n]+/g, ' ');
       }
     }
   };
