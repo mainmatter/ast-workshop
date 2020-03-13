@@ -417,8 +417,165 @@ look at PostCSS.
 
 
 ## ![Slide 31](./assets/abstract-syntax-forestry.031.png)
+
+Alright, now that we have all of that out of the way, let's see how we can apply
+what we just learned. The rest of this workshop will mostly be examples and
+exercises. The examples we'll go through together, and the exercise you're
+supposed to solve by yourself, but if you run into any blocking issues feel free
+to ask questions or have a look at the solution.
+
+Also, now would be a good time to take a short coffee or toilet break, and after
+that we'll dive into the chapter "Code Analysis with `@glimmer/syntax`"!
+
+(and if you haven't done it yet, this small break would also be a great time to
+run `yarn install` in the root folder of this repository 😉)
+
+
 ## ![Slide 32](./assets/abstract-syntax-forestry.032.png)
+
+In this first example exercise the goal is to count how often each HTML tag
+(like `<h1>` or `<div>`) and component name (like `<LinkTo>`) is used in a
+Handlebars template.
+
+To make things a little easier I've prepared a small Node.js script for us
+that reads all of the template files in an example app and makes it easier
+for us to analyze the templates.
+
+You can find the example app in the `02-count-tags` folder, and the script is
+at `count-tags.js`. If you run it now, you will see something like:
+
+```
+$ node count-tags.js
+Map {}
+```
+
+This is unsurprising because we haven't written any code yet and nothing is
+filling the `tagCounter` map yet that we're outputting at the end of the script.
+
+
 ## ![Slide 33](./assets/abstract-syntax-forestry.033.png)
+
+Let's look at the solution together. I've included it as copy-pasteable code
+below, but I would recommend that you try to type it yourself so that the
+following exercises will be easier to follow.
+
+<details>
+ <summary>Solution</summary>
+
+```js
+const fs = require('fs');
+const globby = require('globby');
+const glimmer = require('@glimmer/syntax');
+
+let tagCounter = new Map();
+
+// find all template files in the `app/` folder
+let templatePaths = globby.sync('app/**/*.hbs', {
+  cwd: __dirname,
+  absolute: true,
+});
+
+for (let templatePath of templatePaths) {
+  // read the file content
+  let template = fs.readFileSync(templatePath, 'utf8');
+
+  // parse the file content into an AST
+  let root = glimmer.preprocess(template);
+
+  // use `traverse()` to "visit" all of the nodes in the AST
+  glimmer.traverse(root, {
+    ElementNode(node) {
+      // read the tag name from the `ElementNode`
+      let { tag } = node;
+
+      // read the current count for that tag name
+      let previousCount = tagCounter.get(tag) || 0;
+
+      // increase the counter by 1
+      tagCounter.set(tag, previousCount + 1);
+    }
+  });
+}
+
+// output the raw results
+console.log(tagCounter);
+```
+</details>
+
+There are a few things here to understand so take your time before you continue,
+because all of what we will work on from now will build on these basics.
+
+First of all, you can see that we import a package called `@glimmer/syntax`.
+This package lives in the [glimmer-vm](https://github.com/glimmerjs/glimmer-vm/tree/master/packages/%40glimmer/syntax)
+project and can be used to parse Handlebars files into JSON-based syntax trees.
+
+The next interesting line is where we call `glimmer.preprocess(template)`. This
+parses the file and returns a JSON object, or it will throw an error if the
+template has a syntax error.
+
+And please don't ask me why this function is called `preprocess()` instead of
+something more straight-forward as `parse()`. I honestly don't know... 😅
+
+Anyway, if, instead of continuing with the solution, you use `console.log(root);`
+now, you will see that it looks roughly similar to the AST we've seen before in
+the AST Explorer. But as you can also see, working with the raw JSON-based AST
+can be a bit hard because it is often quite large. I can highly recommend to
+have the AST Explorer open in a browser tab whenever you work on anything
+AST-related.
+
+For this example we can use the default snippet in the AST Explorer for now,
+which we can restore by hovering over the "Snippet" menu item, and then
+selecting "New" from the menu. If you're not in "Handlebars" mode, make sure
+you select it from the languages menu before doing the above.
+
+If you now click on one of the `<div>` elements or the `<h1>` you can see that
+all HTML tags are represented by `ElementNodes`. And all of these `ElementNodes`
+have an attribute `tag`, which is the tag name of the HTML element. The same is
+also true for component invocations that use Angle Bracket Syntax like
+`<LinkTo @route="index">Home</LinkTo>`.
+
+If we want to count how often a tag is being used that means we need to look
+at all of the `ElementNodes` in the AST and count how often the same `tag`
+attribute appears.
+
+But there is a problem... You can see that one of the `<div>` elements is
+nested in the other one. And the AST reflects that, by also having a nested
+structure. Now, we could write a bit of code that goes through every child
+element of the `root` node, then every child element of those, and so on, but,
+luckily, the Glimmer developers have already done that for us.
+
+Let me introduce you to the `traverse()` function in the `@glimmer/syntax`
+package. The way this works is by giving two arguments to the function: first,
+the root element of the AST, and second, a JavaScript object. That JavaScript
+object can contain callback functions for any or all of the AST node types that
+we've encountered so far.
+
+As a quick example, try the following code:
+
+```js
+glimmer.traverse(root, {
+  ElementNode(node) {
+    console.log(node);
+  },
+  AttrNode(node) {
+    console.log(node);
+  },
+});
+```
+
+You can see that only AST nodes with the types `ElementNode` and `AttrNode` are
+printed on the console.
+
+For our specific example we only care about `ElementNodes` though. Inside of the
+callback function we extract the `tag` attribute from the node, look at the
+`tagCounter` map to figure out the previous count for this tag name and then
+increase it by one. Finally, we print the content of `tagCounter` to the
+console.
+
+If everything worked you should see that there are currently 240 `<div>` tags
+in this app, and e.g. `<LinkTo>` is used 95 times. 🎉
+
+
 ## ![Slide 34](./assets/abstract-syntax-forestry.034.png)
 ## ![Slide 35](./assets/abstract-syntax-forestry.035.png)
 ## ![Slide 36](./assets/abstract-syntax-forestry.036.png)
