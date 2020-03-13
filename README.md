@@ -183,6 +183,86 @@ more ergonomic view of the same data.
 
 
 ![Slide 16](./assets/abstract-syntax-forestry.016.png)
+
+Let's start with the first exercise!
+
+I invite you to click around a bit in the AST Explorer and when you feel
+comfortable try to answer the three questions above.
+
+If you don't know what an **element modifier** is I would recommend to first
+have a look at the [Ember.js Guides](https://guides.emberjs.com/release/components/template-lifecycle-dom-and-modifiers/)
+that explain what they are and what they can be used for.
+
+To get started you can modify the example template on the left side of the
+screen to match the snippet below:
+
+```hbs
+<div class="entry">
+  <h1>{{title}}</h1>
+  <div class="body">
+    {{body}}
+  </div>
+  <button type="button" {{on "click" this.onNext}}>Next</button>
+</div>
+```
+
+<details>
+ <summary>Solution 1</summary>
+
+> what is the node type of and element modifier in handlebars templates?
+
+To solve this first exercise we need to click on the `on` in 
+`{{on "click" this.onNext}}`, which will focus a `PathExpression` element in the
+AST. You can see that this `PathExpression` belongs to the `path` attribute of
+the parent element and that element has the `type` attribute
+`ElementModifierStatement`
+
+And that is already the answer to our first question "what is the node type of
+and element modifier in handlebars templates?":
+
+The node `type` of an element modifier is `ElementModifierStatement`
+</details>
+
+<details>
+ <summary>Solution 2</summary>
+
+> what other attributes does a modifier have?
+
+For this question we keep our focus on the `ElementModifierStatement` node in
+the AST. We've already seen that the element has a `type`
+(`ElementModifierStatement`) and a `path` (a `PathExpression` with `on`), but
+there are also some other attributes here:
+
+- `params` holds a list of all the positional parameters (`"click"` and
+  `this.onNext` in this case).
+
+- `hash` holds information about named parameters. for example the [`on`
+  modifier](https://api.emberjs.com/ember/3.17/classes/Ember.Templates.helpers/methods/on?anchor=on)
+  that we're using in this example supports a named parameter called `passive`,
+  that can be used like this: `{{on "click" this.onNext passive=true}}`
+
+Depending on the state of the "Hide location data" checkbox in the AST Explorer
+you can also see a `loc` attribute. This attribute tells us where in the
+template file this AST node starts and ends. This information is for example
+used by the AST Explorer to highlight the correct characters when we hover over
+the nodes in the panel on the right side.
+</details>
+
+<details>
+ <summary>Solution 3</summary>
+
+> how are modifiers assigned to their parent node?
+
+To answer this last question of the exercise we need to look at the parent node
+of our `ElementModifierStatement`. You can see that the
+`ElementModifierStatement` node is part of an array, which makes sense, because
+an element in Handlebars can have multiple modifiers at the same time.
+
+That array of element modifiers is assigned to the `modifiers` key of the
+`ElementNode` parent element, and that is already the answer that we're looking
+for: `modifiers`.
+</details>
+
 ![Slide 17](./assets/abstract-syntax-forestry.017.png)
 ![Slide 18](./assets/abstract-syntax-forestry.018.png)
 ![Slide 19](./assets/abstract-syntax-forestry.019.png)
