@@ -270,19 +270,152 @@ for: `modifiers`.
 </details>
 
 ## ![Slide 17](./assets/abstract-syntax-forestry.017.png)
-## ![Slide 18](./assets/abstract-syntax-forestry.018.png)
-## ![Slide 19](./assets/abstract-syntax-forestry.019.png)
-## ![Slide 20](./assets/abstract-syntax-forestry.020.png)
+
+Alright, after this first exercise let's see what all this is actually useful
+for.
+
+Any ideas? 
+
 ## ![Slide 21](./assets/abstract-syntax-forestry.021.png)
+
+Asking this without you seeing the answer already on the next slide would
+obviously work much better, but let's pretend that someone in the room had
+raised their hand and answered one or more of these things... 😉
+
+There are generally three categories of tools that we can build using ASTs.
+
+The first category is **code analysis tools**. Basically tools that parse code files
+into ASTs and then analyze the code via the AST. Some tools might analyze the
+code directly as characters, but it is usually waaay easier if you can work with
+the code in a more structured way.
+
+The second category are **compilers**. These kinds of tools take your code, parse
+it, convert it into something different that a machine can execute and then
+write it out again.
+
+Don't worry if this sounds complicated or abstract, we'll get to some example
+in just a few seconds... depending on how fast you can read... 😄
+
+The third category can be named **refactoring** tools, or sometimes also
+referred to as **codemods**. These tools read your code, adjust it in some way
+and write it out again.
+
 ## ![Slide 22](./assets/abstract-syntax-forestry.022.png)
+
+At this point you might be thinking: "wait, the second and third category sound
+almost the same... what's the difference?"
+
+And you are absolutely correct that the lines are a little blurry here.
+
 ## ![Slide 23](./assets/abstract-syntax-forestry.023.png)
+
+The main difference between the two categories is that compilation tools write
+the output in a way that is optimized for machines to read it, with often a lot
+of optimizations that make the resulting code quite unreadable.
+
+Refactoring tools however try to keep the output as close to the input as
+possible, so that the developers are still able to read the code in an easy way.
+
 ## ![Slide 24](./assets/abstract-syntax-forestry.024.png)
+
+I promised you examples, so let's go through all three of these categories and
+find a few examples.
+
+As you can see the slide above is blank again, which is usually the trigger for
+you to come up with a few answers yourself before we continue.
+
+...
+
+...
+
+...
+
+Alright, let's see what our example list has on it.
+
 ## ![Slide 25](./assets/abstract-syntax-forestry.025.png)
+
+The most famous code analysis tool in the JavaScript ecosystem right now is
+[ESLint](https://eslint.org/).
+
+Something similar also exists to analyze CSS and SASS files and it is called
+[stylelint](https://stylelint.io/).
+
+And then we also have a bunch of code analysis tools from the Ember.js ecosystem
+specifically, like [ember-template-lint](https://github.com/ember-template-lint/ember-template-lint/),
+the [Ember Language Server](https://github.com/emberwatch/ember-language-server),
+and [ember-intl-analyzer](https://github.com/simplabs/ember-intl-analyzer).
+
+
 ## ![Slide 26](./assets/abstract-syntax-forestry.026.png)
+
+The next category is "Compilation".
+
+One famous compiler is `gcc`, which can be used to turn C and C++ code into
+machine code that can run on your computer.
+
+But we want to focus on the JavaScript ecosystem here...
+
 ## ![Slide 27](./assets/abstract-syntax-forestry.027.png)
+
+You probably know it under the name "transpiler" instead of "compiler", but
+[Babel](https://babeljs.io/) fits our definition quite well. It's mostly called
+transpiler because it happens to compile the input language, JavaScript, to
+the same output language, JavaScript.
+
+Another example that is again more CSS focused is [SASS](https://sass-lang.com/),
+which compiles SASS files to CSS files.
+
+[PostCSS](https://postcss.org/) goes in a similar direction, but here you could
+also call it a transpiler since it compiles CSS into CSS.
+
+Another example is [UglifyJS](https://github.com/mishoo/UglifyJS), which
+compiles JavaScript into minified JavaScript. The code after the compilation
+still does the same thing, but it's optimized for machines to execute, and no
+longer for humans to read or edit.
+
+And looking more into the Ember.js ecosystem, we have the [Glimmer](https://github.com/glimmerjs/glimmer-vm/)
+template compiler, which turns our Handlebars templates into code that runs
+directly in the browser.
+
+
 ## ![Slide 28](./assets/abstract-syntax-forestry.028.png)
+
+If we look a little closer here, we can see that a lot of these compilers are
+actually built out of a number of smaller plugins that can be enabled or
+disabled as we want. This is similar to how you can turn on and off certain
+rules in your ESLint or ember-template-lint config files.
+
+
 ## ![Slide 29](./assets/abstract-syntax-forestry.029.png)
+
+Finally, the last category: Refactoring
+
+If you haven't built a codemod before it's unlikely that you know these tools
+so let's jump right to the list of examples.
+
+
 ## ![Slide 30](./assets/abstract-syntax-forestry.030.png)
+
+If you want to build a codemod that modifies JavaScript files then the best
+solution is currently [jscodeshift](https://github.com/facebook/jscodeshift),
+which is built on top of [recast](https://github.com/benjamn/recast), and gives
+it a more jQuery-like API.
+
+For Handlebars templates the awesome [Robert Jackson](https://github.com/rwjblue/)
+has built something similar, which is called [ember-template-recast](https://github.com/ember-template-lint/ember-template-recast).
+Something like jscodeshift does not yet exist for it, but I've seen some early
+prototypes and the future looks bright! 😊
+
+And then the last tool on this list is something that we've already seen before:
+PostCSS
+
+PostCSS is in some sense a special case because it largely preserves the input
+formatting by default, but is also regularly used as a transpiler. We won't
+focus on PostCSS in this workshop, but if you ever want or need to write a
+codemod in the future that needs to touch CSS then I would recommend to have a
+look at PostCSS.
+
+
 ## ![Slide 31](./assets/abstract-syntax-forestry.031.png)
 ## ![Slide 32](./assets/abstract-syntax-forestry.032.png)
 ## ![Slide 33](./assets/abstract-syntax-forestry.033.png)
