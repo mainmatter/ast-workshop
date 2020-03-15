@@ -577,7 +577,206 @@ in this app, and e.g. `<LinkTo>` is used 95 times. 🎉
 
 
 ## ![Slide 34](./assets/abstract-syntax-forestry.034.png)
-## ![Slide 35](./assets/abstract-syntax-forestry.035.png)
+
+This concludes our first example exercise. This next one you should first try
+on your own and only once you solved it, or are really stuck you can click
+on the "Solution".
+
+The goal of this exercise is to use `console.log()` to warn about the confusing
+pattern of using an `unless` condition with an `else` block.
+
+As usual I have prepared a small script for us that can be used as a starting
+point. This time the code is in the `03-no-unless-else` folder in the 
+`find-unless-else.js` file.
+
+If you need a first, initial hint: type the code snippet from the slide into the
+AST Explorer first, and play around with it a little bit to figure out how we
+can determine if the `unless` condition has an `else` block or not. Once you
+have an idea try to use our knowledge from the last example to finish the
+script file.
+
+At the end, the output should look something like this:
+
+```
+$ node find-unless-else.js 
+Found unless/else in app/components/crate-toml-copy.hbs:6:8
+Found unless/else in app/templates/crate/owners.hbs:60:8
+```
+
+<details>
+ <summary>Solution</summary>
+
+By playing around in the AST Explorer we can see that the defining thing about
+the `unless` block is that it is a `BlockStatement` with a `path` attribute that
+is a `PathExpression` and has an `original` attribute of `unless.
+
+So far, so good. Now we are able to find `unless` blocks in our templates, but
+how can we figure out if the have an `else` block too?
+
+If we play around some more in the AST Explorer by removing the `else` block
+from the snippet, we can see that the `inverse` attribute of the
+`BlockStatement` changes. When there is an `else` block we can see a `Block`
+element for the `inverse` attribute, otherwise the `inverse` attribute is
+`null`.
+
+To recap, we need to find all `BlockStatements`, that have a `PathExpression`
+with `original: 'unless'`, and have an `inverse` that is not `null`.
+
+How can we find all `BlockStatements` in the template? By using the `traverse()`
+function, similar to the previous example exercise:
+
+```js
+glimmer.traverse(root, {
+  BlockStatement(node) {
+    // TODO check for the other requirements and warn if they match
+  },
+});
+```
+
+Once we see a `BlockStatement` the callback function above will be called and
+we now need to check if this `BlockStatement` is an `unless` block and if it has
+an `else` block too:
+
+```js
+if (
+  // first we make sure that `node.path` is really a `PathExpression`
+  // since there are a few edge cases where it might not be
+  node.path.type === 'PathExpression' &&
+
+  // then we check if this is an `unless` block
+  node.path.original === 'unless' &&
+
+  // and finally, we check if the block has an `else` block too
+  node.inverse
+) {
+  // TODO print warning
+}
+```
+
+I'll leave it up to you how exactly to print the warning. Below is an example
+that I came up with that includes the filename, line number and also the column
+at which the `unless` block is found:
+
+```js
+const fs = require('fs');
+const globby = require('globby');
+const glimmer = require('@glimmer/syntax');
+
+// find all template files in the `app/` folder
+let templatePaths = globby.sync('app/**/*.hbs', {
+  cwd: __dirname,
+  absolute: true,
+});
+
+for (let templatePath of templatePaths) {
+  // read the file content
+  let template = fs.readFileSync(templatePath, 'utf8');
+
+  // parse the file content into an AST
+  let root = glimmer.preprocess(template);
+
+  // use `traverse()` to "visit" all of the nodes in the AST
+  glimmer.traverse(root, {
+    BlockStatement(node) {
+      if (
+        // first we make sure that `node.path` is really a `PathExpression`
+        // since there are a few edge cases where it might not be
+        node.path.type === 'PathExpression' &&
+
+        // then we check if this is an `unless` block
+        node.path.original === 'unless' &&
+
+        // and finally, we check if the block has an `else` block too
+        node.inverse
+      ) {
+        // if so, we print a warning to the console
+        console.log(`Found unless/else in ${templatePath}:${node.loc.start.line}:${node.loc.start.column}`);
+      }
+    },
+  });
+}
+```
+</details>
+
+<details>
+ <summary>Optional Extra Exercise</summary>
+
+In the `03b-no-unless-else-lint-rule` folder I've included an optional extra
+exercise. This was meant for people doing the in-person workshop that would
+otherwise get bored while waiting for some of the slower participants to finish
+the exercise.
+
+In this extra exercise the goal is to write a custom lint rule for
+ember-template-lint, that basically does the same thing as our basic Node.js
+script from the previous exercise: find `unless/else` issues and warn about
+them.
+
+You can see in the `.template-lintrc.js` file that we define a custom
+template-lint plugin and import the `custom/no-unless-else` rule from the
+`lib/template-lint-rules/no-unless-else.js` file. If you look at that file you
+can see that it imports the `Rule` class from the `ember-template-lint` package
+and the exports a new subclass of it with an empty `visitor()` method.
+
+The term "visitor" stands for the object with the callback functions that we
+usually pass to the `traverse()` function. In this case ember-template-lint
+calls the `traverse()` function for us, and we only have to return a suitable
+visitor object from the `visitor()` method of the rule.
+
+If you need more help I would recommend to read through the [Plugin documentation](https://github.com/ember-template-lint/ember-template-lint/blob/master/docs/plugins.md)
+of ember-template-lint, which also explains what you have to do to tell template
+lint that you want to display a warning somewhere.
+
+And finally, the results of this exercise should be the same as for the previous
+exercise:
+
+```
+$ yarn -s lint:hbs
+app/components/crate-toml-copy.hbs
+  6:8  error  Found unless/else  custom/no-unless-else
+
+app/templates/crate/owners.hbs
+  60:8  error  Found unless/else  custom/no-unless-else
+
+✖ 2 problems (2 errors, 0 warnings)
+``` 
+</details>
+
+<details>
+ <summary>Optional Extra Exercise Solution</summary>
+
+```js
+const Rule = require('ember-template-lint').Rule;
+
+module.exports = class extends Rule {
+  visitor() {
+    return {
+      BlockStatement(node) {
+        if (
+          // first we make sure that `node.path` is really a `PathExpression`
+          // since there are a few edge cases where it might not be
+          node.path.type === 'PathExpression' &&
+
+          // then we check if this is an `unless` block
+          node.path.original === 'unless' &&
+
+          // and finally, we check if the block has an `else` block too
+          node.inverse
+        ) {
+          // if so, report a template-lint warning
+          this.log({
+            message: 'Found unless/else',
+            line: node.loc && node.loc.start.line,
+            column: node.loc && node.loc.start.column,
+            source: this.sourceForNode(node)
+          });
+        }
+      },
+    };
+  }
+};
+``` 
+</details>
+
 ## ![Slide 36](./assets/abstract-syntax-forestry.036.png)
 ## ![Slide 37](./assets/abstract-syntax-forestry.037.png)
 ## ![Slide 38](./assets/abstract-syntax-forestry.038.png)
