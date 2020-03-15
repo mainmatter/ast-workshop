@@ -1494,4 +1494,132 @@ for us beginners this is quite sufficient for now!
 
 
 ## ![Slide 46](./assets/abstract-syntax-forestry.046.png)
+
+We're almost done. This is the last exercise that I've prepared for this
+workshop!
+
+For this last one we will write an Ember-specific ESLint rule that warns about
+unnecessary service injection arguments.
+
+What is an "unnecessary service injection argument"?
+
+Well, if you inject a service like in the following example:
+
+```js
+Component.extend({
+  search: service('search'),
+})
+```
+
+The `'search'` argument is actually unnecessary, because it matches the `search`
+key, and the `service()` function will automatically default to the property key
+if no argument is given to it.
+
+Anyway, the goal is to write an ESLint rule to catch this pattern and warn
+about it.
+
+In the `09-no-unnecessary-injection-argument` folder you can, once again, find
+a `lib/eslint-rules` subfolder, with a `no-unnecessary-injection-argument.js`
+file in it. The `.eslintrc.js` file is already adjusted to load the correct rule
+so either you can again use `yarn -s lint:js`, or you can develop the rule in
+the AST Explorer again.
+
+Finally, before we start, the ESLint team has created some great docs on how to
+write custom ESLint rules, so if you get stuck or want to deepen your knowledge
+after the workshop, you should visit <https://eslint.org/docs/developer-guide/working-with-rules>.
+
+<details>
+ <summary>Solution</summary>
+
+You may be tempted to start with the `CallExpression` that represents
+`service('search')`, but in this case it will probably be easier to look at the
+parent node, which is a `Property`.
+
+The `Property` has a `key`, which is an `Identifier` with then name `search`,
+and it has a value, which is the `CallExpression` above.
+
+Let's also take a closer look at that `CallExpression`. The `callee` is also an
+`Identifier`, but with the name `service`, and we have one element in the
+`arguments` list of the `CallExpression`: a `Literal` with a `value` of
+`search`.
+
+If we'll try to recap these conditions it will be a pretty long sentence so
+let's tackle this issue step-by-step again. We'll start by warning about **all**
+`Property` nodes:
+
+```js
+return {
+  Property(node) {
+    context.report({
+      node,
+      message: 'Unnecessary injection argument',
+    });
+  }
+};
+```
+
+Next, we'll check if the `key` and `value` children have to correct node type:
+
+```js
+let { key, value } = node;
+if (key.type !== 'Identifier') return;
+if (value.type !== 'CallExpression') return;
+```
+
+If that is the case, then we should have a closer look at the `value` node.
+Let's check that it is an `Identifier` and has a name of either `service` or
+`inject`:
+
+```js
+let { callee } = value;
+if (callee.type !== 'Identifier') return;
+if (!['inject', 'service'].includes(callee.name)) return;
+```
+
+In a real-world rule it would make sense to also check where `service` is
+defined and if it was indeed imported from `@ember/service`, but for our
+purposes this is good enough for now!
+
+That is not all we need to check from the `value` node though, we also need to
+take a look at the `arguments`, and specifically the first one:
+
+```js
+let arg = value.arguments[0];
+if (!arg) return;
+if (arg.type !== 'Literal') return;
+if (arg.value !== key.name) return;
+```
+
+Here, we take the first argument, check if it exists, check if it is a `Literal`,
+and then check if the `Literal` value matches the `name` of the property `key`.
+
+If all of that matches we can finally instruct ESLint to warn about this issue:
+
+```js
+context.report({
+  node: arg,
+  message: 'Unnecessary injection argument',
+});
+``` 
+</details>
+
 ## ![Slide 47](./assets/abstract-syntax-forestry.047.png)
+
+... aaaaand that's it!
+
+Congratulations, you are now "certified" abstract syntax forestry workers!
+
+Please keep in mind that this workshop only covered the basics and that there is
+a lot more material out there to explore. I explicitly focused on Ember
+templates a lot, because it is way easier to find documentation and blog posts
+about ESLint and some of the other more popular tools.
+
+If this workshop got you interested in learning more about these topic or if you
+would like to contribute to the wider Ember.js ecosystem, I welcome you to take a
+look at the [eslint-plugin-ember](https://github.com/ember-cli/eslint-plugin-ember)
+and [ember-template-lint](https://github.com/ember-template-lint/ember-template-lint/)
+projects on GitHub. Other than that there are also the `#topic-codemods` and
+`#e-template-lint` channels on the Ember.js community Discord server.
+
+Thank you for participating and I hope you still enjoyed this somewhat unplanned
+digital version of the workshop!
