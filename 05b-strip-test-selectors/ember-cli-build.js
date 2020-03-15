@@ -43,8 +43,12 @@ module.exports = function(defaults) {
   });
 
   class StripTestSelectorsTransform {
-    transform(ast) {
-      // TODO write your implementation here
+    transform(root) {
+      this.syntax.traverse(root, {
+        // TODO write your implementation here
+      });
+
+      return root;
     }
   }
 
