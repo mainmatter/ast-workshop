@@ -975,7 +975,208 @@ so I'll leave that up to you to figure out... 😉
 
 
 ## ![Slide 41](./assets/abstract-syntax-forestry.041.png)
+
+With "Code Analysis" and "Compilation" done, you've probably already guessed
+what comes next... it's "Refactoring"!
+
+In this chapter we'll be looking at how to write basic template codemods using
+`ember-template-recast`, and as usual, we'll start with an example exercise
+in which I'll guide you through all of the steps. 
+
+
 ## ![Slide 42](./assets/abstract-syntax-forestry.042.png)
+
+For this example we'll pretend that our app has a `MenuItem` component, but
+we're not happy about its API. It is using a `@caption` argument to determine
+what the caption should be, but we'd like it to be more flexible, so we've
+created a `NewMenuItem` component with a different API.
+
+The goal of this example exercise is to write a codemod that automatically
+converts from component invocations like `<MenuItem @caption="foo" />` to
+`<NewMenuItem>foo</NewMenuItem>`.
+
+As I mentioned, this time we're going to use `ember-template-recast` instead of
+`@glimmer/syntax`. One small advantage that is immediately visible: there is a
+`parse()` function! So let's start with that, parsing the files into an AST.
+
+You've probably already figured out that this exercise will be done in the
+folder `06-component-migration`, and in particular in the
+`migrate-components.js` file.
+
+You can see that we already have a `ember-template-recast` import at the top of
+the file, so as mentioned before we will start by parsing the template files in
+the `for` loop:
+
+```js
+for (let templatePath of templatePaths) {
+  // read the file content
+  let template = fs.readFileSync(templatePath, 'utf8');
+
+  // parse the file content into an AST
+  let root = recast.parse(template);
+}
+```
+
+If you `console.log()` the `root` variable, or if you look at its content with a
+debugger, you will see that the AST from ember-template-recast looks very
+familiar. That's because ember-template-recast internally uses `@glimmer/syntax`
+and the AST is based on the Glimmer AST too.
+
+The magic happens within another function though: the `print()` function.
+
+We can use `print()` to convert a syntax tree back into text/characters/bytes
+that we can write back into the template files:
+
+```js
+for (let templatePath of templatePaths) {
+  // read the file content
+  let template = fs.readFileSync(templatePath, 'utf8');
+
+  // parse the file content into an AST
+  let root = recast.parse(template);
+
+  // TODO modify the AST
+
+  // convert the AST back into text
+  let newTemplate = recast.print(root);
+
+  // if necessary, write the changes back to the original file
+  if (newTemplate !== template) {
+    fs.writeFileSync(templatePath, newTemplate, 'utf8')
+  }
+}
+```
+
+If you run the script in the current form, nothing should change because
+ember-template-recast is aware that you haven't modified the original AST and
+thus will return the original source text.
+
+Time to modify the AST!
+
+First, we'll start by adjusting the tag name from `MenuItem` to `NewMenuItem`.
+Just like `@glimmer/syntax` ember-template-recast also has a `traverse()`
+function, that we can use to find all the `ElementNodes` in the template and
+then adjust them:
+
+```js
+recast.traverse(root, {
+  ElementNode(node) {
+    // filter out non-MenuItem elements
+    if (node.tag !== 'MenuItem') return;
+
+    // change the tag name to `NewMenuItem`
+    node.tag = 'NewMenuItem';
+  },
+});
+```
+
+If you run the script now, and then look at the changed files in `git` you can
+see that it already changed some of the file. **Please note that each time you
+run the script you will have to reset those files to their original state**
+before you can run the script another time. Otherwise the script won't find any
+`MenuItem` component invocations anymore.
+
+Now that the tag name is adjusted we will also need to convert the `@caption`
+argument. But to convert it we first need to find it in the AST. We know from
+a previous exercise that arguments like `@caption` can be found in the
+`attributes` key of an `ElementNode`, so let's see if we can `find()` a matching
+node in there:
+
+```js
+let captionAttr = node.attributes.find(it => it.name === '@caption');
+```
+
+If you look at the corresponding `AttrNode` in the AST Explorer you can see that
+the `value` in this case is a `TextNode`. The same type of node that we've
+already seen when we did the whitespace collapsing exercise. That means a
+`TextNode` is a valid node to be included in the `children` attribute of an
+`ElementNode`.
+
+All of this leads to the conclusion that we can probably just take the existing
+`TextNode` from the `value` attribute of the `AttrNode`, and move it into the
+`children` array of the `ElementNode`... let's try that and see if it works:
+
+```js
+// find the `@caption` attribute
+let captionAttr = node.attributes.find(it => it.name === '@caption');
+if (captionAttr) {
+  // move the `@caption` value into the element's `children`
+  node.children = [captionAttr.value];
+}
+```
+
+Trying to runs this you will probably notice that we forgot something. We only
+added the caption to the `children` array, but we did not remove it from the
+list of attributes, so now we have it twice. 😅
+
+Let's fix this! We already know two ways to remove an attribute from a component
+invocation now, so let's do it again:
+
+```js
+// remove `@caption` attribute
+node.attributes = node.attributes.filter(it => it.name !== '@caption');
+```
+
+And now we're finally at a point where running the codemod produces roughly the
+results that we were looking for... 🎉
+
+Included below is the full solution snippet if you couldn't piece it together
+from the snippets above.
+
+<details>
+ <summary>Full Solution</summary>
+
+```js
+const fs = require('fs');
+const globby = require('globby');
+const recast = require('ember-template-recast');
+
+// find all template files in the `app/` folder
+let templatePaths = globby.sync('app/**/*.hbs', {
+  cwd: __dirname,
+  absolute: true,
+});
+
+for (let templatePath of templatePaths) {
+  // read the file content
+  let template = fs.readFileSync(templatePath, 'utf8');
+
+  // parse the file content into an AST
+  let root = recast.parse(template);
+
+  // use `traverse()` to "visit" all of the nodes in the AST
+  recast.traverse(root, {
+    ElementNode(node) {
+      // filter out non-MenuItem elements
+      if (node.tag !== 'MenuItem') return;
+
+      // change the tag name to `NewMenuItem`
+      node.tag = 'NewMenuItem';
+
+      // find the `@caption` attribute
+      let captionAttr = node.attributes.find(it => it.name === '@caption');
+      if (captionAttr) {
+        // move the `@caption` value into the element's `children`
+        node.children = [captionAttr.value];
+      }
+
+      // remove `@caption` attribute
+      node.attributes = node.attributes.filter(it => it.name !== '@caption');
+    }
+  });
+
+  // convert the AST back into text
+  let newTemplate = recast.print(root);
+
+  // if necessary, write the changes back to the original file
+  if (newTemplate !== template) {
+    fs.writeFileSync(templatePath, newTemplate, 'utf8')
+  }
+}
+```
+</details>
+
+
 ## ![Slide 43](./assets/abstract-syntax-forestry.043.png)
 ## ![Slide 44](./assets/abstract-syntax-forestry.044.png)
 ## ![Slide 45](./assets/abstract-syntax-forestry.045.png)
