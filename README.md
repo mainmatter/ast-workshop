@@ -1178,7 +1178,167 @@ for (let templatePath of templatePaths) {
 
 
 ## ![Slide 43](./assets/abstract-syntax-forestry.043.png)
+
+What follows now is probably the most advanced exercise of the workshop, so
+don't feel bad if it takes you a while to find a good solution or if you're
+stuck and you can't find one at all. It's absolutely fine to give up and look at
+the solution in this case, but make sure to read through it and try to
+understand it.
+
+Also, as a small piece of warning, ember-template-recast is still relatively new
+and in some cases can produce unintuitive or wrong results. If you hit one of
+those cases try to see if you can achieve the desired results in a different way
+and report this issue to the ember-template-recast bug tracker.
+
+Alright, with all of that out of the way, let's start with this exercise!
+
+You hopefully still remember our issue with `unless` conditions and `else`
+blocks from before, right?
+
+In this exercise we will try to build a codemod that automatically fixes those
+issues, by converting the `unless` condition into an `if` condition, and swapping
+the contents of the condition blocks.
+
+The folder for this exercise is `07-fix-unless-else` and in it you will find an
+example app, and a `fix-unless-else.js` script, that looks basically the same
+as the one for our previous example exercise.
+
+Good luck!
+
+<details>
+ <summary>Solution</summary>
+
+As in the previous exercise about `unless/else` we'll first start by writing
+a visitor and finding the relevant `unless` conditions, that have an `inverse`
+block:
+
+```js
+recast.traverse(root, {
+  BlockStatement(node) {
+    if (
+      // first we make sure that `node.path` is really a `PathExpression`
+      // since there are a few edge cases where it might not be
+      node.path.type === 'PathExpression' &&
+
+      // then we check if this is an `unless` block
+      node.path.original === 'unless' &&
+
+      // and finally, we check if the block has an `else` block too
+      node.inverse
+    ) {
+      // TODO transform this node
+    }
+  }
+});
+```
+
+Next, we'll change the `unless` to an `if` by replacing the `path` of the
+`BlockStatement`:
+
+```js
+node.path.original = 'if';
+```
+
+And now comes the more complicated part, swapping the block contents. Let's try
+this somewhat intuitive approach first:
+
+```js
+let program = node.program;
+let inverse = node.inverse;
+
+node.program = inverse;
+node.inverse = program;
+```
+
+If you run this, you will notice that it almost worked... but not quite. Instead
+of swapping the contents, the content of the first block is now used for both
+blocks... 🤔
+
+This is what I meant when I mentioned earlier that ember-template-recast still
+has a few issues. But luckily there is a workaround: Instead of swapping the
+`program` and `inverse` blocks directly, we will only swap their `body` arrays:
+
+```js
+let programBody = node.program.body;
+let inverseBody = node.inverse.body;
+
+node.program.body = inverseBody;
+node.inverse.body = programBody;
+```
+
+Remember, before you run the codemod again, reset the example app files to their
+original state! And make sure to not reset the codemod script too, because
+otherwise you will lose your code changes! 😱
+
+What follows is the full solution to this exercise:
+
+```js
+const fs = require('fs');
+const globby = require('globby');
+const recast = require('ember-template-recast');
+
+// find all template files in the `app/` folder
+let templatePaths = globby.sync('app/**/*.hbs', {
+  cwd: __dirname,
+  absolute: true,
+});
+
+for (let templatePath of templatePaths) {
+  // read the file content
+  let template = fs.readFileSync(templatePath, 'utf8');
+
+  // parse the file content into an AST
+  let root = recast.parse(template);
+
+  // use `traverse()` to "visit" all of the nodes in the AST
+  recast.traverse(root, {
+    BlockStatement(node) {
+      if (
+        // first we make sure that `node.path` is really a `PathExpression`
+        // since there are a few edge cases where it might not be
+        node.path.type === 'PathExpression' &&
+
+        // then we check if this is an `unless` block
+        node.path.original === 'unless' &&
+
+        // and finally, we check if the block has an `else` block too
+        node.inverse
+      ) {
+        let { program, inverse } = node;
+        let programBody = program.body;
+        let inverseBody = inverse.body;
+
+        // swap `program` and `inverse` blocks
+        node.program.body = inverseBody;
+        node.inverse.body = programBody;
+
+        // change the block statement from `unless` to `if`
+        node.path.original = 'if';
+      }
+    }
+  });
+
+  // convert the AST back into text
+  let newTemplate = recast.print(root);
+
+  // if necessary, write the changes back to the original file
+  if (newTemplate !== template) {
+    fs.writeFileSync(templatePath, newTemplate, 'utf8')
+  }
+}
+```
+</details>
+
+
 ## ![Slide 44](./assets/abstract-syntax-forestry.044.png)
+
+And with this part done we will leave the Handlebars ecosystem and have a quick
+look at some JavaScript-related tools! ✨
+
+In particular, we will write two custom rules for ESLint in the following
+exercises.
+
+
 ## ![Slide 45](./assets/abstract-syntax-forestry.045.png)
 ## ![Slide 46](./assets/abstract-syntax-forestry.046.png)
 ## ![Slide 47](./assets/abstract-syntax-forestry.047.png)
