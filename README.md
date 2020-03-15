@@ -778,10 +778,202 @@ module.exports = class extends Rule {
 </details>
 
 ## ![Slide 36](./assets/abstract-syntax-forestry.036.png)
+
+We've now covered two examples on how to analyze Handlebars templates using
+Node.js scripts and the `@glimmer/syntax` package. So far, we've only read,
+parsed and analyzed code, but we haven't been writing anything.
+
+This next chapter is about **compilation**, where we read code, transform it,
+and then write it out again.
+
+Let's dive right into the first example!
+
+
 ## ![Slide 37](./assets/abstract-syntax-forestry.037.png)
-## ![Slide 38](./assets/abstract-syntax-forestry.038.png)
+
+We all like small asset sizes so that our users have to download less bytes.
+How can we achieve that? By sending as few bytes as we can. One way of doing
+that might be to collapse unnecessary whitespace characters in our templates.
+
+Please note that this is an artificial example and in real-world apps this has
+certain caveats. If you want to use something like this then I would recommend
+to look at the [ember-hbs-minifier](https://github.com/simplabs/ember-hbs-minifier)
+addon, but make sure to properly test and QA your app after you've installed it! 😉
+
+Let's get back to our task. We want to replace all the collapsible whitespace
+in the template with single space characters. For the purposes of this exercise
+we'll define "whitespace" as space characters (` `), new lines (`\n`), line
+feeds (`\r`) and tab characters (`\t`).
+
+Since this is a workshop about syntax trees and not about regular expressions
+I'll show you how to replace such whitespace right away:
+
+```js
+let newText = oldText.replace(/[ \n\r\t]+/g, ' ');
+```
+
+In case you're wondering the `g` in the regular expression stands for "global"
+and means that it will replace **all** occurrences, and not just the first match
+that it finds.
+
+Since recompiling an Ember app every time we change our compilation plugin would
+be very time consuming, we will do this example exercise directly in the AST
+Explorer.
+
+At the top of the page in the menu bar you can find a "Transform" toggle button,
+and if you hover over it, you can select "glimmer". This will open up two new
+panels at the bottom of the page.
+
+The bottom left panel is the editor in which we will develop our custom compiler
+plugin. On the bottom right is the "output" after the compiler plugin has been
+applied.
+
+You can see on the bottom left panel that the AST Explorer includes an example
+compiler plugin which reverses the tag names of all the `ElementNodes`. This is
+obviously not a useful real-world plugin but it demonstrates what kind of code
+is expected from us to work with the template compiler API.
+
+But, we have yet to figure out what AST nodes to look at in this exercise!
+
+If we click on any of the indentation whitespace of a template you should
+hopefully see a `TextNode` highlighted in the upper right panel. Those
+`TextNode` elements all have a `chars` attribute, and, as the name suggests,
+that contains the text characters in this element.
+
+This means our goal is to apply the regular expression above to all of the
+`TextNodes` in the template, and specifically the `chars` attributes in those
+`TextNodes`.
+
+As you can see in the example compiler plugin in the AST Explorer, it has a
+`visitor` thing again. In this case it is a regular property on a returned
+object but it works exactly the same as the previous visitors that we have
+written. So let's write another one:
+
+```js
+module.exports = function() {
+  return {
+    name: 'ast-transform',
+
+    visitor: {
+      TextNode(node) {
+        node.chars = node.chars.replace(/[ \r\n]+/g, ' ');
+      }
+    }
+  };
+};
+```
+
+If you put the snippet above in the lower left panel of the AST Explorer you
+can see how the output in the lower right panel changes, and is now only a
+single line of code, divided by space characters. Success!! 🎉
+
+
 ## ![Slide 39](./assets/abstract-syntax-forestry.039.png)
-## ![Slide 40](./assets/abstract-syntax-forestry.040.png)
+
+Alright, now it's your turn again. You may be using [ember-test-selectors](https://github.com/simplabs/ember-test-selectors)
+in your apps at work, but have you ever wondered how it works? In this exercise
+we will build a very basic version of it.
+
+The goal is to remove all element attributes that start with `data-test-`.
+
+Similar to the previous exercise I would recommend to do this exercise directly
+in the "Transform" mode of the AST Explorer. And if you feel stuck and not sure
+how to remove a node from the AST, have a look at the parent element and see if
+you can figure out a way using that element instead.
+
+<details>
+ <summary>Solution</summary>
+
+Let's first copy the code example from the slide into the AST Explorer:
+
+```handlebars
+<SomeComponent data-test-foo="bar" />
+```
+
+If you now click on `data-test-foo` you can see that it is part of an
+`AttrNode` element in the AST. We don't care that much about the `value` of this
+`AttrNode`, but we are very interested in the `name`.
+
+It seems like we need to look for `AttrNodes` with a `name` that starts with
+`data-test-`. At this point I have to tell you that there are (at least) two
+ways of solving this, and I will show you both of them.
+
+If you managed to solve the previous exercises you probably know by now how to
+write a `visitor` that looks for `AttrNodes`, but how do you delete an AST node
+once you've found it? In some cases we can `return null;` from the visitor
+callback function, and that will cause the `traverse()` function to remove the
+AST node. For your future endeavours it might also be good to know that you can
+not only return `null` but also completely new AST nodes, in which case the
+current node is replaced with the new node. 
+
+Back to our task, the first solution looks like this:
+
+```js
+module.exports = function() {
+  return {
+    name: 'ast-transform',
+
+    visitor: {
+      AttrNode(node) {
+        if (node.name.startsWith('data-test-')) {
+          return null;
+        }
+      }
+    }
+  };
+};
+```
+
+If you didn't know about this `return null;` thing before then it can be hard to
+find, so here is another solution that uses a different approach:
+
+```js
+module.exports = function() {
+  return {
+    name: 'ast-transform',
+
+    visitor: {
+      ElementNode(node) {
+        node.attributes = node.attributes
+          .filter(it => !it.name.startsWith('data-test-'));
+      }
+    }
+  };
+};
+```
+
+In this case we look for the `ElementNodes` in the AST and we filter out all
+of the `attributes` contents (`AttrNodes`) where the `name` starts with
+`data-test-`, before assigning the filtered list to `attributes` again.
+
+Both of these solutions work equally well, and the most important part when
+writing such compiler plugins is testing, to make sure that with a new compiler
+version it doesn't just suddenly break and stop working without you noticing.
+</details>
+
+<details>
+ <summary>Optional Extra Exercise</summary>
+
+Just like before, there is an optional extra exercise here that will give you
+an opportunity to figure out how to integrate such compiler plugins with the
+Ember CLI build process.
+
+In the `05b-strip-test-selectors` folder, if you open the `ember-cli-build.js`
+file, you can see at the bottom of the file that I've already prepared a rough
+skeleton of what an integration can look like. We're creating a regular class
+with a `transform()` method and that method gets the root node as the first
+argument. Inside that method we also have access to `this.syntax` which is
+roughly the same content as if you did `require('@glimmer/syntax')`.
+
+After that class definition we use `app.registry.add()` to register an
+`htmlbars-ast-plugin`, and with that, we have a compiler plugin integrated
+in the Ember CLI build pipeline.
+
+The implementation of the plugin can be roughly similar to the previous exercise
+so I'll leave that up to you to figure out... 😉
+</details>
+
+
 ## ![Slide 41](./assets/abstract-syntax-forestry.041.png)
 ## ![Slide 42](./assets/abstract-syntax-forestry.042.png)
 ## ![Slide 43](./assets/abstract-syntax-forestry.043.png)
