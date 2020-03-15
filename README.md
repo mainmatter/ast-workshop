@@ -1340,5 +1340,158 @@ exercises.
 
 
 ## ![Slide 45](./assets/abstract-syntax-forestry.045.png)
+
+Let's jump right in!
+
+`console.log()` is nice as a debugging tool, but in Ember.js apps, most of the
+time if there is a `console.log()` in the code it is a sign that a developer
+forgot to remove some of that debugging code... 😉
+
+ESLint has a [no-console](https://eslint.org/docs/rules/no-console) rule that we
+can use to warn about that, but our goal here is to learn how to write such
+rules, so we'll ignore that it exists for now.
+
+Unsurprisingly, this example exercise will be done in the `08-no-console-log`
+folder. In the `.eslintrc.js` file you can see that I've already configured
+a `custom-no-console-log` rule. But where does the code for that rule come from?
+
+If you look in the `package.json` file, there is a `lint:js` npm script defined
+there, and it is using the `--rulesdir` option of ESLint. This option lets you
+specify a path from which additional rule definitions will be loaded. In this
+case we will put our custom ESLint rules in the `lib/eslint-rules` folder.
+
+Let's open the `lib/eslint-rules/custom-no-console-log.js` file and see what we
+have in there...
+
+```js
+module.exports = {
+  create: function(context) {
+    // TODO write your implementation here
+  }
+};
+```
+
+Currently, this file only exports a JavaScript object, with a single method on
+it, which is called `create()`. What is that method supposed to do?
+
+As with the Handlebars AST a lot of other tools, including ESLint, also use the
+"Visitor" concept. ESLint expects custom rules to return a visitor object from
+the `create()` method, so let's do that:
+
+```js
+return {
+  // wait... what do we put here?
+};
+```
+
+Before we can continue we need to figure out how an AST for a JavaScript file
+looks like! Luckily, AST Explorer can help us a lot again.
+
+Let's switch the AST Explorer from Handlebars to the JavaScript language, and
+then we're going to enable the "ESLint v4" transform from the menu bar.
+
+Transform? Oh, yes, we can also write ESLint rules directly in the AST Explorer!
+
+Whether you prefer to write the code for this and the next exercise directly in
+the AST Explorer, or if you want to stay in your editor is up to you. Both ways
+work fine and basically the same way.
+
+Let's continue to figure out what `console.log()` actually looks like in the
+ESLint AST. For that, we will type `console.log()` in the top left panel and
+then click on it to highlight it in the AST panel on the top right corner of the
+screen.
+
+If you did that, you will probably have landed on an `Identifier` AST node,
+either `console`, or `log`. Their shared parent element is a `MemberExpression`,
+which corresponds to the `console.log` characters in the file. And if we go up
+another level we reach a `CallExpression` with a `callee` (the
+`MemberExpression`), and an `arguments` list, which is probably empty unless you
+typed something like `console.log('foo')`.
+
+Okaaaay, that is a lot of new stuff. But also a bit of familiar stuff. The AST
+has different nodes, those nodes have types, and depending on those types the
+nodes also have additional other attributes.
+
+Let's recap what we're looking for: we want to warn about a `CallExpression`,
+with a `callee` that is a `MemberExpression`, that has an `object` that is an
+`Identifier` with name `console`, and a `property` which is also an `Identifier`
+but with the name `log`.
+
+Alright, let's start with the `CallExpression`, and for now we'll just warn
+about any `CallExpression`:
+
+```js
+return {
+  CallExpression(node) {
+    context.report({
+      node,
+      message: 'Unexpected console.log() expression',
+    });
+  }
+};
+```
+
+If you try this in the AST Explorer you will notice in the bottom right corner
+that ESLint starts to print out warnings as comments:
+
+```js
+// Unexpected console.log() expression (at 8:1)
+   console.log();
+// ^
+```
+
+If you prefer to stay in the editor then you can run `yarn -s lint:js` to run
+ESLint and you should also see quite a few warnings now.
+
+Now the next step is to reduce the false positive warnings, until we only warn
+about the real `console.log()` statements. First, we'll filter out
+`CallExpressions` that are not `MemberExpressions`, to avoid warning about
+calls like `alert('hello world!')`:
+
+```js
+let { callee } = node;
+if (callee.type !== 'MemberExpression') return;
+```
+
+Next, we need to check the `object` and `property` of the `MemberExpression`:
+
+```js
+let { object, property } = callee;
+if (object.type !== 'Identifier' || object.name !== 'console') return;
+if (property.type !== 'Identifier' || property.name !== 'log') return;
+```
+
+and... that's it!
+
+```js
+module.exports = {
+  create: function(context) {
+    return {
+      CallExpression(node) {
+        let { callee } = node;
+        if (callee.type !== 'MemberExpression') return;
+
+        let { object, property } = callee;
+        if (object.type !== 'Identifier' || object.name !== 'console') return;
+        if (property.type !== 'Identifier' || property.name !== 'log') return;
+
+        context.report({
+          node,
+          message: 'Unexpected console.log() expression',
+        });
+      }
+    };
+  }
+};
+```
+
+This is the full implementation that is needed to build a basic ESLint rule
+that warns about `console.log()` usage.
+
+If you want, you can compare this to the real-world `no-console` rule in ESLint,
+which is quite a bit more sophisticated and covers a few more edge cases, but
+for us beginners this is quite sufficient for now! 
+
+
 ## ![Slide 46](./assets/abstract-syntax-forestry.046.png)
 ## ![Slide 47](./assets/abstract-syntax-forestry.047.png)
