@@ -3,6 +3,13 @@
 An EmberConf 2020 workshop from [simplabs](https://simplabs.com/) to teach you
 the basics about Abstract Syntax Trees.
 
+Before we begin, there are three things you'll need to have installed on your
+computer to participate in this workshop:
+
+- a browser
+- [Node.js](https://nodejs.org/) 10 or above
+- [yarn](https://classic.yarnpkg.com/en/docs/install)
+
 
 ## ![Slide 1](./assets/abstract-syntax-forestry.001.png)
 
