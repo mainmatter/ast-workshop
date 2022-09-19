@@ -1,6 +1,6 @@
 # Abstract Syntax Forestry
 
-An EmberConf 2020 workshop from [simplabs](https://simplabs.com/) to teach you
+An EmberConf 2020 workshop from [Mainmatter](https://mainmatter.com/) to teach you
 the basics about Abstract Syntax Trees.
 
 Before we begin, there are three things you'll need to have installed on your
@@ -350,7 +350,7 @@ Something similar also exists to analyze CSS and SASS files and it is called
 And then we also have a bunch of code analysis tools from the Ember.js ecosystem
 specifically, like [ember-template-lint](https://github.com/ember-template-lint/ember-template-lint/),
 the [Ember Language Server](https://github.com/emberwatch/ember-language-server),
-and [ember-intl-analyzer](https://github.com/simplabs/ember-intl-analyzer).
+and [ember-intl-analyzer](https://github.com/Mainmatter/ember-intl-analyzer).
 
 
 ## ![Slide 26](./assets/abstract-syntax-forestry.026.png)
@@ -804,7 +804,7 @@ that might be to collapse unnecessary whitespace characters in our templates.
 
 Please note that this is an artificial example and in real-world apps this has
 certain caveats. If you want to use something like this then I would recommend
-to look at the [ember-hbs-minifier](https://github.com/simplabs/ember-hbs-minifier)
+to look at the [ember-hbs-minifier](https://github.com/Mainmatter/ember-hbs-minifier)
 addon, but make sure to properly test and QA your app after you've installed it! 😉
 
 Let's get back to our task. We want to replace all the collapsible whitespace
@@ -877,7 +877,7 @@ single line of code, divided by space characters. Success!! 🎉
 
 ## ![Slide 39](./assets/abstract-syntax-forestry.039.png)
 
-Alright, now it's your turn again. You may be using [ember-test-selectors](https://github.com/simplabs/ember-test-selectors)
+Alright, now it's your turn again. You may be using [ember-test-selectors](https://github.com/Mainmatter/ember-test-selectors)
 in your apps at work, but have you ever wondered how it works? In this exercise
 we will build a very basic version of it.
 
